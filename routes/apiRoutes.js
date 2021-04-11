@@ -2,6 +2,8 @@ const express = require("express");
 const route = express.Router();
 const jwt = require("jsonwebtoken");
 const authMiddleware = require("../middlewares/authMiddleware");
+const records = require("../database/data.json");
+const { Record } = require("../database/model");
 
 route.post("/signup", (req, res) => {
   const { email, password } = req.body;
@@ -16,12 +18,21 @@ route.post("/signup", (req, res) => {
   res.json({ accessToken });
 });
 
-route.post("/process", authMiddleware, (req, res) => {
-  res.end("process");
+route.post("/process", authMiddleware, async (req, res) => {
+  try {
+    await Record.bulkCreate(records);
+    res.json({
+      success: true,
+      message: "Data Processing Finished  Successfully",
+    });
+  } catch (e) {
+    res.json({ success: false, message: e });
+  }
 });
 
-route.get("/fetch", authMiddleware, (req, res) => {
-  res.end("data");
+route.get("/fetch", authMiddleware, async (req, res) => {
+  const records = await Record.findAll(); // must paginated due to large amount of data
+  res.json({ data: records });
 });
 
 route.all("*", (req, res) =>
